@@ -172,7 +172,8 @@
         const ACCESS_KEY = 'hello'; 
         const ACCESS_GRANTED_KEY = 'senseTestAccessGranted'; // アクセス許可を保存するキー
         const NEXT_SITE_PASS = 'house'; // 合格時に表示する次のサイトのパスワード
-        const NEXT_SITE_URL = '#'; // 遷移先URL (必要に応じて変更してください)
+        // V: ユーザーからの依頼によりURLを修正しました
+        const NEXT_SITE_URL = 'https://xifumeixiao-svg.github.io/love-site/index2.html'; 
 
 
         const testData = [
@@ -378,7 +379,7 @@
             const html = `
                 <div class="access-denied">
                     <h2>アクセスが制限されています</h2>
-                    <p>既に受験済みのため、再受験やコンテンツへのアクセスはできません。</p>
+                    <p>既に受験済み（不合格）のため、再受験やコンテンツへのアクセスはできません。</p>
                 </div>
             `;
             app.innerHTML = html;
