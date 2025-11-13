@@ -18,6 +18,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding: 20px;
         }
 
         .container {
@@ -28,6 +29,12 @@
             max-width: 800px;
             width: 90%;
             text-align: left;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px;
+            }
         }
 
         h1 {
@@ -54,7 +61,8 @@
             color: #555;
         }
 
-        .question-item input[type="text"] {
+        .question-item input[type="text"], 
+        .access-gate input[type="password"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -119,6 +127,35 @@
         .access-denied h2 {
             font-size: 1.8em;
         }
+
+        /* パスワード入力ゲートのスタイル */
+        .access-gate {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        .access-gate button {
+            width: auto;
+            padding: 12px 40px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .error-message {
+            color: #F44336;
+            margin-top: 15px;
+            font-size: 0.9em;
+            height: 20px; /* レイアウトシフト防止 */
+        }
+        .secret-password-box {
+            display: inline-block;
+            background-color: #d67a99;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.5em;
+            letter-spacing: 2px;
+            margin: 15px 0;
+        }
     </style>
 </head>
 <body>
@@ -130,6 +167,14 @@
         // JavaScript: テストのロジック
 
         // --- 🔑 テストデータ編集可能エリア 🔑 ---
+
+        // 🚨 アクセスキーと次のパスワードの設定
+        const ACCESS_KEY = 'hello'; 
+        const ACCESS_GRANTED_KEY = 'senseTestAccessGranted'; // アクセス許可を保存するキー
+        const NEXT_SITE_PASS = 'house'; // 合格時に表示する次のサイトのパスワード
+        const NEXT_SITE_URL = '#'; // 遷移先URL (必要に応じて変更してください)
+
+
         const testData = [
             { id: 1, question: "コスメの二大プチプラブランド、セザンヌとあと一つは何？（カタカナで）", answerKeywords: ["キャンメイク", "CANMAKE", "canmake"] },
             { id: 2, question: "肌の凹凸や毛穴を目立たなくし、ファンデーションのノリを良くするための化粧下地の一種は？（カタカナ5文字）", answerKeywords: ["プライマー"] },
@@ -164,15 +209,75 @@
             return normalized.replace(/[\s　、。！？・]/g, '').toLowerCase();
         }
 
-        // アクセス制限チェック
-        if (localStorage.getItem(TEST_COMPLETED_KEY) === 'fail') {
-            displayAccessDenied();
-        } else if (localStorage.getItem(TEST_COMPLETED_KEY) === 'pass') {
-             // 合格済みの場合は直接合格画面を表示
-            displayResult(true);
-        } else {
-            // 未受験の場合はテスト画面を表示
-            displayTestForm();
+        // --- メインフローの開始関数 ---
+        function mainFlow() {
+            const hasAccess = localStorage.getItem(ACCESS_GRANTED_KEY) === 'true';
+
+            // 1. 認証後の通常フロー
+            if (hasAccess) {
+                const testStatus = localStorage.getItem(TEST_COMPLETED_KEY);
+                if (testStatus === 'fail') {
+                    displayAccessDenied(); // 不合格済み
+                } else if (testStatus === 'pass') {
+                    displayResult(true); // 合格済み
+                } else {
+                    displayTestForm(); // 未受験
+                }
+            } else {
+                // アクセス許可がない場合は、アクセスゲートを表示
+                displayAccessGate();
+            }
+        }
+        // --- メインフローの開始関数 ここまで ---
+
+        /**
+         * アクセスキー入力画面を表示する（限定公開ゲート）
+         */
+        function displayAccessGate() {
+            let html = `
+                <div class="access-gate">
+                    <h1 class="text-3xl">🔑 限定公開アクセスキー入力</h1>
+                    <p class="mb-8 text-gray-600">
+                        このテストはパスワードを知っている方限定です。<br>
+                        アクセス用のパスワードを入力してください。
+                    </p>
+                    <form id="accessForm">
+                        <input 
+                            type="password" 
+                            id="accessKeyInput" 
+                            placeholder="秘密のアクセスキー" 
+                            required
+                            class="mb-4"
+                        >
+                        <div id="accessError" class="error-message"></div>
+                        <button type="submit" class="access-gate-button">テストに進む</button>
+                    </form>
+                </div>
+            `;
+            app.innerHTML = html;
+
+            document.getElementById('accessForm').addEventListener('submit', handleAccessSubmit);
+        }
+        
+        /**
+         * アクセスキー送信時の処理
+         * @param {Event} event - フォームイベント
+         */
+        function handleAccessSubmit(event) {
+            event.preventDefault();
+            const inputKey = document.getElementById('accessKeyInput').value.trim();
+            const errorElement = document.getElementById('accessError');
+
+            if (inputKey === ACCESS_KEY) {
+                // 正しいキーの場合
+                localStorage.setItem(ACCESS_GRANTED_KEY, 'true');
+                errorElement.textContent = '';
+                // テストフォームへ遷移
+                displayTestForm(); 
+            } else {
+                // 間違っている場合
+                errorElement.textContent = 'エラー: パスワードが間違っています。';
+            }
         }
 
         /**
@@ -246,8 +351,10 @@
                 html = `
                     <div class="result-screen pass">
                         <h2>おめでとう！次のステップに進んでください。</h2>
-                        <p>合格です！センシティブな知識も盛り込んでしまってすみません。次のステップへ進みましょう。</p>
-                        <button class="next-step-button" onclick="file:///C:/Users/user/Downloads/index②.html">
+                        <p>合格です！センシティブな知識も盛り込んでしまってすみません。次のサイトの認証パスワードは、こちらです。</p>
+                        <div class="secret-password-box">${NEXT_SITE_PASS}</div>
+                        <p>次のサイトへ進みましょう。</p>
+                        <button class="next-step-button" onclick="window.location.href='${NEXT_SITE_URL}'">
                             次のサイトへ進む
                         </button>
                     </div>
@@ -265,7 +372,7 @@
         }
 
         /**
-         * アクセス制限画面を表示する
+         * アクセス制限画面を表示する (不合格済みの場合)
          */
         function displayAccessDenied() {
             const html = `
@@ -277,6 +384,8 @@
             app.innerHTML = html;
         }
 
+        // ページ読み込み時にメインフローを開始
+        mainFlow();
     </script>
 </body>
 </html>
