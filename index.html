@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<head>
+    <meta name="robots" content="noindex">
+</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入居者歓迎！女子力テスト☆</title>
+    <style>
+        /* CSS: スタイリング */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 90%;
+            text-align: left;
+        }
+
+        h1 {
+            color: #d67a99;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0e0e4;
+            padding-bottom: 10px;
+        }
+
+        .question-item {
+            margin-bottom: 25px;
+            padding: 15px;
+            border-left: 5px solid #d67a99;
+            background-color: #fff9fb;
+            border-radius: 4px;
+        }
+
+        .question-item label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        .question-item input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #d67a99;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #c06987;
+        }
+
+        .result-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .result-screen h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .pass h2 {
+            color: #4CAF50; /* 緑色 */
+        }
+
+        .fail h2 {
+            color: #F44336; /* 赤色 */
+        }
+
+        .next-step-button {
+            background-color: #4CAF50;
+            margin-top: 20px;
+            width: auto;
+            padding: 12px 30px;
+        }
+
+        .next-step-button:hover {
+            background-color: #45a049;
+        }
+
+        .access-denied {
+            text-align: center;
+            padding: 50px;
+            color: #F44336;
+        }
+
+        .access-denied h2 {
+            font-size: 1.8em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="app">
+        </div>
+
+    <script>
+        // JavaScript: テストのロジック
+
+        // --- 🔑 テストデータ編集可能エリア 🔑 ---
+        const testData = [
+            { id: 1, question: "コスメの二大プチプラブランド、セザンヌとあと一つは何？（カタカナで）", answerKeywords: ["キャンメイク", "CANMAKE", "canmake"] },
+            { id: 2, question: "肌の凹凸や毛穴を目立たなくし、ファンデーションのノリを良くするための化粧下地の一種は？（カタカナ5文字）", answerKeywords: ["プライマー"] },
+            { id: 3, question: "主に目尻に線を引くメイク用品の名前は？（カタカナ）", answerKeywords: ["アイライナー", "アイライン"] },
+            { id: 4, question: "骨格の種類、「ナチュラル」「ウェーブ」あともう一つは？（カタカナ）", answerKeywords: ["ストレート", "骨格ストレート"] },
+            { id: 5, question: "黄色系のメイクや服が似合う肌タイプのことを何という？（カタカナ。略称可）", answerKeywords: ["イエベ", "イエローベース"] },
+            { id: 6, question: "化粧水の後、水分の蒸発を防ぐ「蓋をする」目的で使用する基礎化粧品は？（漢字）", answerKeywords: ["乳液"] },
+            { id: 7, question: "ファンデーションの種類、リキッドとあともう一つは？", answerKeywords: ["粉", "パウダー"] },
+            { id: 8, question: "痛みの改善や気分の落ち込みの緩和、更には女性ホルモンを整えるために飲むこともあるお薬の名前は？（2文字または漢字含めて5文字）", answerKeywords: ["ピル", "低用量ピル","ぴる"] },
+            { id: 9, question: "普段下着が汚れるのを防ぎ、不快感を軽減するために着ける、薄くて小さいあれの名前は？（ひらがなとカタカナで）", answerKeywords: ["おりものシート", "パンティライナー"] },
+            { id: 10, question: "ヘアアイロンの種類、「ストレート」ともう一つ、巻くのに特化したものの名前は？（カタカナ2文字）", answerKeywords: ["コテ"] }
+        ];
+
+        const PASS_SCORE = Math.ceil(testData.length * 0.7); // 合格ライン: 70% (7問)
+        const TEST_COMPLETED_KEY = 'senseTestCompleted'; // ローカルストレージキー
+        // ----------------------------------------
+
+        const app = document.getElementById('app');
+
+        // ユーティリティ関数: 全角を半角に、ひらがなをカタカナに統一する
+        function normalizeText(text) {
+            if (!text) return '';
+            // 1. 全角英数字を半角に
+            let normalized = text.replace(/[０-９Ａ-Ｚａ-ｚ]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+            // 2. ひらがなをカタカナに
+            normalized = normalized.replace(/[\u3041-\u3096]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) + 0x60);
+            });
+            // 3. 全ての空白・句読点を削除し、小文字に変換
+            return normalized.replace(/[\s　、。！？・]/g, '').toLowerCase();
+        }
+
+        // アクセス制限チェック
+        if (localStorage.getItem(TEST_COMPLETED_KEY) === 'fail') {
+            displayAccessDenied();
+        } else if (localStorage.getItem(TEST_COMPLETED_KEY) === 'pass') {
+             // 合格済みの場合は直接合格画面を表示
+            displayResult(true);
+        } else {
+            // 未受験の場合はテスト画面を表示
+            displayTestForm();
+        }
+
+        /**
+         * テストフォームを表示する
+         */
+        function displayTestForm() {
+            let html = '<h1>入居者歓迎！女子力テスト☆（全10問）</h1>';
+            html += '<form id="testForm">';
+
+            testData.forEach(item => {
+                html += `
+                    <div class="question-item">
+                        <label for="q${item.id}">${item.id}. ${item.question}</label>
+                        <input type="text" id="q${item.id}" name="q${item.id}" required>
+                    </div>
+                `;
+            });
+
+            html += '<button type="submit">結果を判定する</button>';
+            html += '</form>';
+
+            app.innerHTML = html;
+
+            document.getElementById('testForm').addEventListener('submit', handleFormSubmit);
+        }
+
+        /**
+         * フォーム送信時の処理
+         * @param {Event} event - フォームイベント
+         */
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            let score = 0;
+
+            testData.forEach(item => {
+                // ユーザーの回答を正規化
+                const userAnswer = normalizeText(formData.get(`q${item.id}`) || '');
+
+                // ユーザーの回答が、定義されたキーワードのいずれかと一致するかチェック
+                const isCorrect = item.answerKeywords.some(keyword => {
+                    // 正解キーワードも正規化
+                    const normalizedKeyword = normalizeText(keyword);
+                    
+                    // 判定：部分一致
+                    return userAnswer.includes(normalizedKeyword);
+                });
+
+                if (isCorrect) {
+                    score++;
+                }
+            });
+
+            const passed = score >= PASS_SCORE;
+            
+            // ローカルストレージに結果を保存
+            localStorage.setItem(TEST_COMPLETED_KEY, passed ? 'pass' : 'fail');
+
+            // 結果画面を表示
+            displayResult(passed);
+        }
+
+        /**
+         * 結果画面を表示する
+         * @param {boolean} passed - 合否
+         */
+        function displayResult(passed) {
+            let html = '';
+
+            if (passed) {
+                html = `
+                    <div class="result-screen pass">
+                        <h2>おめでとう！次のステップに進んでください。</h2>
+                        <p>合格です！センシティブな知識も盛り込んでしまってすみません。次のステップへ進みましょう。</p>
+                        <button class="next-step-button" onclick="file:///C:/Users/user/Downloads/index②.html">
+                            次のサイトへ進む
+                        </button>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="result-screen fail">
+                        <h2>残念！あなたの女子力は…いまひとつです！</h2>
+                        <p>再受験はできません。ドンマイ！</p>
+                    </div>
+                `;
+            }
+
+            app.innerHTML = html;
+        }
+
+        /**
+         * アクセス制限画面を表示する
+         */
+        function displayAccessDenied() {
+            const html = `
+                <div class="access-denied">
+                    <h2>アクセスが制限されています</h2>
+                    <p>既に受験済みのため、再受験やコンテンツへのアクセスはできません。</p>
+                </div>
+            `;
+            app.innerHTML = html;
+        }
+
+    </script>
+</body>
+</html>
