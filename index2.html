@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【手動認証】シェアハウスへの愛テスト</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS: スタイリング */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fce7f3; /* 薄いピンクの背景 */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(214, 122, 153, 0.2);
+            max-width: 600px;
+            width: 100%;
+            text-align: left;
+        }
+        
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        h1 {
+            color: #d67a99; /* メインカラー */
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0e0e4;
+            padding-bottom: 10px;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .question-item {
+            margin-bottom: 25px;
+            padding: 15px;
+            border-left: 5px solid #d67a99;
+            background-color: #fffafc;
+            border-radius: 8px;
+        }
+
+        .question-item label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        .question-item input[type="text"], .access-gate input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ffccd9;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .question-item input[type="text"]:focus, .access-gate input[type="password"]:focus {
+            outline: none;
+            border-color: #d67a99;
+            box-shadow: 0 0 5px rgba(214, 122, 153, 0.5);
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #d67a99;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: background-color 0.3s ease, transform 0.1s;
+        }
+
+        button:hover {
+            background-color: #c06987;
+            transform: translateY(-1px);
+        }
+
+        .result-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .result-screen h2 {
+            font-size: 2.2em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .pass h2 {
+            color: #4CAF50; /* 合格は緑 */
+        }
+
+        .fail h2, .access-denied h2 {
+            color: #F44336; /* 不合格・制限は赤 */
+        }
+
+        .pass p {
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .secret-password {
+            display: inline-block;
+            background-color: #d67a99;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .next-step-button {
+            background-color: #4CAF50;
+            margin-top: 20px;
+            width: auto;
+            padding: 12px 30px;
+        }
+
+        .next-step-button:hover {
+            background-color: #45a049;
+        }
+
+        .access-denied {
+            text-align: center;
+            padding: 50px;
+            color: #F44336;
+        }
+
+        .access-denied p {
+            font-size: 1.1em;
+        }
+
+        .access-gate {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .error-message {
+            color: #F44336;
+            margin-top: 15px;
+            font-size: 0.9em;
+            height: 20px; /* レイアウトシフト防止 */
+        }
+
+        /* アクセスゲート用のボタン */
+        .access-gate button {
+            width: auto;
+            padding: 12px 40px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="app">
+        <!-- コンテンツはJavaScriptで挿入されます -->
+    </div>
+
+    <script>
+        // JavaScript: テストのロジック
+
+        // --- 🔑 テストデータ編集可能エリア 🔑 ---
+
+        // 🚨 手動入力のための秘密のアクセスキー (これを教えた人だけがアクセスできます)
+        const ACCESS_KEY = 'house'; 
+        const ACCESS_GRANTED_KEY = 'shareHouseAccessGranted'; // アクセス許可を保存するキー
+        
+        const testData = [
+            { id: 1, question: "シェアハウスの設立年は？（半角数字で　例：２０２０年→2020）", answerKeywords: ["2011", "2014"] },
+            { id: 2, question: "オーナーさんの車のナンバープレートは？（半角数字で　例：０１２９→0129）", answerKeywords: ["0214"] },
+            { id: 3, question: "オーナーさんが好きでコレクションしている、100巻を超える投稿者からの動画を集めたシリーズものホラー映画のタイトルは？（漢字五文字）", answerKeywords: ["心霊闇動画"] },
+            { id: 4, question: "オーナーさんの現在の家族構成は？一人挙げよ（漢字）", answerKeywords: ["妹"] },
+            { id: 5, question: "「人喰いの島」「幻の9階」「鈴蘭は眠らない」等の作品を手掛ける、大阪府守口市生まれのホラー作家の名前は？（漢字またはひらがなで）", answerKeywords: ["渡千枝", "わたりちえ"] },
+            { id: 6, question: "オーナーさんの好きな色は？（ひらがな）", answerKeywords: ["ぴんく", "ピンク"] },
+            { 
+                id: 7, 
+                question: "このシェアハウスの住所は？「鎌倉市」から番地は「〇-〇-〇」で書け（半角数字）。", 
+                answerKeywords: ["鎌倉市西鎌倉1175"] 
+            },
+        ]; 
+
+        // 7問中、3問以下正解で合格 (合格基準: 愛が強すぎない＝正解しすぎない)
+        const PASS_SCORE_MAX = 3; 
+        
+        const TEST_COMPLETED_KEY = 'shareHouseLoveTestCompleted'; // ローカルストレージキー
+        const SECRET_PASS = 'wasitu'; // 合格時のパスワード
+        const NEXT_SITE_URL = 'https://benrijun08.wixsite.com/my-site-1/post/西鎌倉のシェアハウスに注意'; // 遷移先URL
+        // ----------------------------------------
+
+        const app = document.getElementById('app');
+
+        // --- 🔒 カンニング防止用関数 ---
+
+        // デフォルト動作を防止する汎用関数
+        function preventDefault(event) {
+            event.preventDefault();
+        }
+
+        // キーボードショートカットを防止する関数
+        function preventKeyboardShortcuts(event) {
+            // F5またはCtrl+R (リロード)
+            if ((event.key === 'F5') || (event.ctrlKey && (event.key === 'r' || event.key === 'R'))) {
+                preventDefault(event);
+            }
+            // Alt + 左/右矢印 (戻る/進む)
+            if (event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+                preventDefault(event);
+            }
+            // F12 (開発者ツール)
+            if (event.key === 'F12') {
+                preventDefault(event);
+            }
+        }
+
+        // カンニング防止機能を有効化する (リスナーを追加する)
+        function activateCheatingPrevention() {
+            // 右クリック(コンテキストメニュー)を禁止
+            document.addEventListener('contextmenu', preventDefault);
+            // キーボード操作を禁止
+            document.addEventListener('keydown', preventKeyboardShortcuts);
+        }
+
+        // カンニング防止機能を無効化する (リスナーを削除する)
+        function deactivateCheatingPrevention() {
+            document.removeEventListener('contextmenu', preventDefault);
+            document.removeEventListener('keydown', preventKeyboardShortcuts);
+        }
+
+        // 離脱防止のためのリスナー関数 (警告メッセージ)
+        function handleBeforeUnload(event) {
+            // テストが完了していない場合にのみ実行
+            if (localStorage.getItem(TEST_COMPLETED_KEY) === null) {
+                // ブラウザに表示される警告メッセージを設定
+                event.returnValue = 'テストの途中でページを移動すると、結果が保存されず、再受験もできなくなります。よろしいですか？';
+                return 'テストの途中でページを移動すると、結果が保存されず、再受験もできなくなります。よろしいですか？';
+            }
+        }
+        // --- 🔒 カンニング防止用関数 ここまで ---
+
+        /**
+         * ユーティリティ関数: 全角を半角に、ひらがなをカタカナに統一し、記号を削除する（ロバストな判定のため）
+         * @param {string} text - 入力テキスト
+         * @returns {string} - 正規化されたテキスト
+         */
+        function normalizeText(text) {
+            if (!text) return '';
+            // 1. 全角英数字を半角に
+            let normalized = text.replace(/[０-９Ａ-Ｚａ-ｚ]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+            // 2. ひらがなをカタカナに
+            normalized = normalized.replace(/[\u3041-\u3096]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) + 0x60);
+            });
+            // 3. 全ての空白・句読点・住所に使われる記号（ハイフン、長音符など）を削除し、小文字に変換
+            // 削除記号: スペース(半角/全角), 句読点(、。！？・), 住所記号(-, －, ー, /, ., :)
+            return normalized.replace(/[\s　、。！？・\-\uFF0D\u30FC\/\.\:]/g, '').toLowerCase();
+        }
+        
+        // --- メインフローの開始関数 ---
+        function mainFlow() {
+            // アクセス許可がローカルストレージにあるか確認する
+            const hasAccess = localStorage.getItem(ACCESS_GRANTED_KEY) === 'true';
+
+            // 1. 認証後の通常フロー
+            if (hasAccess) {
+                const testStatus = localStorage.getItem(TEST_COMPLETED_KEY);
+                if (testStatus === 'fail') {
+                    displayAccessDenied();
+                } else if (testStatus === 'pass') {
+                    // 合格済みの場合は離脱防止を無効にして結果画面へ
+                    deactivateCheatingPrevention();
+                    displayResult(true);
+                } else {
+                    // 未受験の場合はテスト画面を表示し、カンニング防止を有効化
+                    displayTestForm();
+                }
+            } else {
+                // アクセス許可がない場合は、アクセスゲートを表示
+                displayAccessGate();
+            }
+        }
+        // --- メインフローの開始関数 ここまで ---
+
+
+        /**
+         * アクセスキー入力画面を表示する（限定公開ゲート）
+         */
+        function displayAccessGate() {
+            let html = `
+                <div class="access-gate">
+                    <h1 class="text-3xl">🔑 限定公開アクセスキー入力</h1>
+                    <p class="mb-8 text-gray-600">
+                        このテストはパスワードを知っている方限定です。<br>
+                        発行されたアクセスキー（パスワード）を入力してください。
+                    </p>
+                    <form id="accessForm">
+                        <input 
+                            type="password" 
+                            id="accessKeyInput" 
+                            placeholder="秘密のパスワード" 
+                            required
+                            class="mb-4"
+                        >
+                        <div id="accessError" class="error-message"></div>
+                        <button type="submit" class="access-gate-button">テストに進む</button>
+                    </form>
+                </div>
+            `;
+            app.innerHTML = html;
+
+            document.getElementById('accessForm').addEventListener('submit', handleAccessSubmit);
+        }
+        
+        /**
+         * アクセスキー送信時の処理
+         * @param {Event} event - フォームイベント
+         */
+        function handleAccessSubmit(event) {
+            event.preventDefault();
+            const inputKey = document.getElementById('accessKeyInput').value.trim();
+            const errorElement = document.getElementById('accessError');
+
+            // 🚨 ここでパスワードを 'house' と比較
+            if (inputKey === ACCESS_KEY) {
+                // 正しいキーの場合
+                localStorage.setItem(ACCESS_GRANTED_KEY, 'true');
+                errorElement.textContent = '';
+                // テストフォームへ遷移
+                displayTestForm(); 
+            } else {
+                // 間違っている場合
+                errorElement.textContent = 'エラー: パスワードが間違っています。';
+            }
+        }
+
+
+        /**
+         * テストフォームを表示する
+         */
+        function displayTestForm() {
+            let html = '<h1>シェアハウスへの愛テスト♡（全7問）</h1>'; 
+            html += '<p class="text-center mb-6 text-sm text-gray-600">';
+            html += 'このテストは、あなたがシェアハウスについてどの程度知識があるのか、クイズ形式で出題します。全7問！<br>';
+            html += '※正確な測定の為、わからない場合は素直に「わからない」と入力してください。<br>';
+            html += '尚、カンニング防止の為テスト中にこのサイトを離れることはできません。';
+            html += '</p>';
+            html += '<form id="testForm">';
+
+            testData.forEach(item => {
+                html += `
+                    <div class="question-item">
+                        <label for="q${item.id}">${item.id}. ${item.question}</label>
+                        <input type="text" id="q${item.id}" name="q${item.id}" required>
+                    </div>
+                `;
+            });
+
+            html += '<button type="submit">愛を判定する</button>';
+            html += '</form>';
+
+            app.innerHTML = html;
+
+            document.getElementById('testForm').addEventListener('submit', handleFormSubmit);
+            
+            // 🚨 テスト中は離脱防止とカンニング防止を有効化
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            activateCheatingPrevention(); 
+        }
+
+        /**
+         * フォーム送信時の処理
+         * @param {Event} event - フォームイベント
+         */
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            // 🚨 テスト完了のため、すべての防止機能を解除
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            deactivateCheatingPrevention();
+
+            const formData = new FormData(event.target);
+            let score = 0;
+
+            testData.forEach(item => {
+                // ユーザーの回答を正規化
+                const userAnswer = normalizeText(formData.get(`q${item.id}`) || '');
+
+                // ユーザーの回答が、定義されたキーワードのいずれかと一致するかチェック
+                const isCorrect = item.answerKeywords.some(keyword => {
+                    // 正解キーワードも正規化
+                    const normalizedKeyword = normalizeText(keyword);
+                    
+                    // 判定：部分一致 (回答が正解キーワードを含む)
+                    return userAnswer.includes(normalizedKeyword);
+                });
+
+                if (isCorrect) {
+                    score++;
+                }
+            });
+
+            // 7問中、3問以下正解が合格 (愛が強すぎると不合格)
+            const passed = score <= PASS_SCORE_MAX; 
+            
+            // ローカルストレージに結果を保存
+            localStorage.setItem(TEST_COMPLETED_KEY, passed ? 'pass' : 'fail');
+
+            // 結果画面を表示
+            displayResult(passed);
+        }
+
+        /**
+         * 結果画面を表示する
+         * @param {boolean} passed - 合否
+         */
+        function displayResult(passed) {
+            let html = '';
+
+            // 合否画面が表示されたら、防止機能は完全に無効化
+            deactivateCheatingPrevention();
+
+            if (passed) {
+                html = `
+                    <div class="result-screen pass">
+                        <h2>合格！正解できなくて当然♡</h2>
+                        <p>
+                            ここまでお疲れさまでした！<br>
+                           <br>
+                            サイトの閲覧パスワードは<span class="secret-password">『${SECRET_PASS}』</span>です。
+                        </p>
+                        <button class="next-step-button" onclick="window.location.href='${NEXT_SITE_URL}'">
+                            秘密のサイトへ行く
+                        </button>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="result-screen fail">
+                        <h2>愛が強すぎます！</h2>
+                        <p>あなたはかなり愛強めですね！<br>
+                        文句なし！もう何も言うことはありません。※再受験はできません</p>
+                    </div>
+                `;
+            }
+
+            app.innerHTML = html;
+        }
+
+        /**
+         * アクセス制限画面を表示する
+         */
+        function displayAccessDenied() {
+            // アクセス制限画面では、防止機能を無効化
+            deactivateCheatingPrevention();
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+
+            const html = `
+                <div class="access-denied">
+                    <h2>アクセスが制限されています</h2>
+                    <p>愛のテスト受験済みの為、再度サイトを開くことはできません。</p>
+                </div>
+            `;
+            app.innerHTML = html;
+        }
+        
+        // ページ読み込み時にメインフローを開始
+        mainFlow();
+
+    </script>
+</body>
+</html>
